@@ -311,7 +311,7 @@
         "Reads attachments, including screenshots, as images",
         "Replies that thread correctly in the recipient's mail client",
         "Read-only mode, a recipient allowlist and a folder allowlist",
-        "Runs locally over stdio so credentials never leave the machine"
+        "Hosted endpoint with nothing to install, or run the container yourself"
       ],
       "codeRepository": "https://github.com/amalychev/mail-mcp"
     },
@@ -341,7 +341,7 @@
         {
           "@type": "Question",
           "name": "Can the assistant email anyone it likes?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Not if you set a recipient allowlist. MAIL_ALLOWED_RECIPIENTS restricts outgoing mail to named addresses or whole domains, and the check covers To, Cc and Bcc together, before anything reaches the outgoing server. There is also a full read-only mode in which nothing can be sent or changed at all." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Not if you set a recipient allowlist. X-Mail-Allowed-Recipients restricts outgoing mail to named addresses or whole domains, and the check covers To, Cc and Bcc together, before anything reaches the outgoing server. There is also a full read-only mode in which nothing can be sent or changed at all." }
         },
         {
           "@type": "Question",
@@ -350,8 +350,8 @@
         },
         {
           "@type": "Question",
-          "name": "Does my password leave my machine?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Not in the recommended setup. Run the server locally over stdio and it talks to exactly two parties: your assistant and your mail server. A hosted endpoint also exists for convenience, and there the password does pass through the host, which is why the local mode is the one documented first." }
+          "name": "Does my password pass through your server?",
+          "acceptedAnswer": { "@type": "Answer", "text": "On the hosted endpoint it does: it arrives as a header, opens the connection to your mail server, and is discarded. Nothing is stored — no accounts, no database, nothing on disk. But a mailbox password is not a token scoped to one project, so if that trade is not acceptable, run the same server yourself over stdio and nothing leaves your network." }
         },
         {
           "@type": "Question",
@@ -371,7 +371,7 @@
         {
           "@type": "Question",
           "name": "My company mail server is only reachable inside the network.",
-          "acceptedAnswer": { "@type": "Answer", "text": "Then run the server locally, which is the recommended mode anyway. It connects from your machine, so anything your machine can reach works, including a server on a private network or a Proton Bridge on localhost." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Then the hosted endpoint cannot reach it, and requests for private addresses are refused on purpose. Run your own copy instead: it connects from your machine, so anything your machine can reach works, including a server on a private network or a Proton Bridge on localhost." }
         },
         {
           "@type": "Question",
@@ -401,12 +401,12 @@
     </p>
     <div class="stats">
       <div class="stat"><b>20</b><span>tools</span></div>
-      <div class="stat"><b>any</b><span>IMAP mailbox</span></div>
+      <div class="stat"><b>0</b><span>things to install</span></div>
       <div class="stat"><b>~2 min</b><span>setup time</span></div>
     </div>
     <div class="endpoint">
-      <span class="endpoint-label">Install</span>
-      <code>git clone github.com/amalychev/mail-mcp</code>
+      <span class="endpoint-label">Endpoint</span>
+      <code>https://mail-mcp.webapace.ink/mcp</code>
     </div>
   </div>
 </header>
@@ -422,7 +422,7 @@
     <a href="#tools">All 20 tools</a>
     <a href="#faq">FAQ</a>
     <a href="#trouble">Troubleshooting</a>
-    <a href="#hosted">Hosted mode</a>
+    <a href="#selfhost">Self-hosting</a>
   </div>
 </nav>
 
@@ -435,23 +435,22 @@
     <h2>What this is, in plain words</h2>
     <p class="lead">
       An AI assistant has no mailbox. It cannot log in to yours, cannot see who wrote to you
-      yesterday, and cannot send anything on your behalf. This is the bridge: a small program
-      that runs on your own machine, holds your mail credentials, and gives the assistant a
-      precise set of things it may do with them.
+      yesterday, and cannot send anything on your behalf. This service is the bridge — and it is
+      already running, so there is nothing to install.
     </p>
 
     <div class="grid">
       <div class="card">
         <div class="n">01</div>
-        <h4>It runs on your computer</h4>
-        <p>Started by your assistant, talking to your mail server directly. No account here, no
-        service in the middle, nothing to sign up for.</p>
+        <h4>You point your assistant at one URL</h4>
+        <p>A single command adds <code>mail-mcp.webapace.ink/mcp</code> as a tool provider. No
+        download, no build, no Node.js.</p>
       </div>
       <div class="card">
         <div class="n">02</div>
-        <h4>You give it one address and one password</h4>
-        <p>An app-specific password from your provider — the kind you can revoke on its own
-        without touching your account.</p>
+        <h4>You supply your address and an app password</h4>
+        <p>They travel as two headers with each request. The service holds no accounts and stores
+        nothing between calls.</p>
       </div>
       <div class="card">
         <div class="n">03</div>
@@ -466,8 +465,15 @@
       <li><b>A mailbox that speaks IMAP</b> — which is nearly all of them. Gmail, Outlook, iCloud, Fastmail, Yandex and a dozen others are recognised from your address alone; anything else needs two host names you can copy from your provider's help page.</li>
       <li><b>An app-specific password</b> for that mailbox. Creating one takes a minute and is step 1 below.</li>
       <li><b>An assistant that speaks MCP</b> — Claude Code, Claude Desktop, Cursor and others.</li>
-      <li><b>Node.js 20 or newer</b>, because the server runs on your machine.</li>
     </ul>
+
+    <div class="note warn">
+      <b>One thing to weigh first.</b> Unlike an API token scoped to one project, a mailbox
+      password opens the whole mailbox — so on the hosted endpoint it passes through this host on
+      every request. Nothing is stored here, and the guard rails in step 3 narrow what can be
+      done with it, but if that trade is not acceptable to you, the same server runs on your own
+      machine in a few commands: see <a href="#selfhost">Running it yourself</a>.
+    </div>
   </div>
 </section>
 
@@ -505,21 +511,17 @@
         <div class="note warn">
           <b>Microsoft is the awkward one.</b> Personal accounts and most tenants now accept only
           OAuth, so no password will work. Supply an access token as the password together with
-          <code>MAIL_AUTH_TYPE=oauth2</code>, or use a mailbox elsewhere. The same option works
+          <code>X-Mail-Auth-Type: oauth2</code>, or use a mailbox elsewhere. The same option works
           for Gmail if you prefer a token to an app password.
         </div>
       </div>
 
       <div class="step">
-        <h3>Install and connect</h3>
+        <h3>Connect your assistant</h3>
         <p class="muted">
-          Once, in a terminal — the server is a small Node program that your assistant will start
-          on its own from then on:
+          Pick the tool you use. Two values are yours to fill in: the address you sign in with and
+          the password from the previous step.
         </p>
-        <div class="codewrap"><button class="copy">copy</button><pre>git clone git@github.com:amalychev/mail-mcp.git
-cd mail-mcp
-npm install &amp;&amp; npm run build</pre></div>
-        <p class="muted">Then point your assistant at it. Pick the tool you use:</p>
 
         <div class="tabs" role="tablist">
           <button class="tab" role="tab" aria-selected="true" data-panel="p-cc">Claude Code</button>
@@ -529,46 +531,57 @@ npm install &amp;&amp; npm run build</pre></div>
         </div>
 
         <div class="panel" id="p-cc">
-          <p class="muted">One command:</p>
-          <div class="codewrap"><button class="copy">copy</button><pre>claude mcp add mail \
-  --env MAIL_USER=you@fastmail.com \
-  --env MAIL_PASSWORD=your-app-password \
-  -- node /absolute/path/mail-mcp/dist/index.js</pre></div>
+          <p class="muted">One command in the terminal:</p>
+          <div class="codewrap"><button class="copy">copy</button><pre>claude mcp add --transport http mail \
+  https://mail-mcp.webapace.ink/mcp \
+  --header "X-Mail-User: you@fastmail.com" \
+  --header "X-Mail-Password: your-app-password"</pre></div>
           <p class="muted">
             For a recognised provider that is the whole setup — the incoming and outgoing servers
-            are derived from your address. For any other mailbox, add
-            <code>--env IMAP_HOST=…</code> and <code>--env SMTP_HOST=…</code>.
+            are derived from your address, and the tools appear immediately. For any other
+            mailbox, add <code>--header "X-Mail-Imap-Host: …"</code> and
+            <code>--header "X-Mail-Smtp-Host: …"</code>.
           </p>
         </div>
 
         <div class="panel" id="p-mcp" hidden>
           <p class="muted">
-            Prefer to write the configuration by hand? Create <code>.mcp.json</code> in the root of
-            the repository you work in — everyone who opens it gets the same setup:
+            Prefer to write the configuration by hand? Create a file named <code>.mcp.json</code>
+            in the root of the repository you work in — everyone who opens that repository gets
+            the same setup. Copy this and fill in the blanks:
           </p>
           <div class="codewrap"><button class="copy">copy</button><pre>{
   <span class="c-key">"mcpServers"</span>: {
     <span class="c-key">"mail"</span>: {
-      <span class="c-key">"command"</span>: <span class="c-str">"node"</span>,
-      <span class="c-key">"args"</span>: [<span class="c-str">"/absolute/path/mail-mcp/dist/index.js"</span>],
-      <span class="c-key">"env"</span>: {
-        <span class="c-key">"MAIL_USER"</span>: <span class="c-str">"you@example.com"</span>,
-        <span class="c-key">"MAIL_PASSWORD"</span>: <span class="c-str">"${MAIL_PASSWORD}"</span>,
-        <span class="c-key">"IMAP_HOST"</span>: <span class="c-str">"imap.example.com"</span>,
-        <span class="c-key">"SMTP_HOST"</span>: <span class="c-str">"smtp.example.com"</span>
+      <span class="c-key">"type"</span>: <span class="c-str">"http"</span>,
+      <span class="c-key">"url"</span>: <span class="c-str">"https://mail-mcp.webapace.ink/mcp"</span>,
+      <span class="c-key">"headers"</span>: {
+        <span class="c-key">"X-Mail-User"</span>: <span class="c-str">""</span>,
+        <span class="c-key">"X-Mail-Password"</span>: <span class="c-str">""</span>,
+        <span class="c-key">"X-Mail-Imap-Host"</span>: <span class="c-str">""</span>,
+        <span class="c-key">"X-Mail-Smtp-Host"</span>: <span class="c-str">""</span>
       }
     }
   }
 }</pre></div>
+          <p class="muted">Four values, and only the first two are usually needed:</p>
           <ul class="plain">
-            <li><b><code>MAIL_USER</code></b> — the address you sign in with. For iCloud and some company servers this is only the part before <code>@</code>; then add <code>MAIL_FROM</code> with the full address.</li>
-            <li><b><code>MAIL_PASSWORD</code></b> — the app-specific password from step 1.</li>
-            <li><b><code>IMAP_HOST</code> / <code>SMTP_HOST</code></b> — optional for a known provider, required for anything else. Your provider calls them the <i>incoming</i> and <i>outgoing</i> mail server.</li>
+            <li><b><code>X-Mail-User</code></b> — the address you sign in with. For iCloud and some company servers this is only the part before <code>@</code>; then add <code>X-Mail-From</code> with the full address.</li>
+            <li><b><code>X-Mail-Password</code></b> — the app-specific password from step 1. This one is required; an empty string gets you <i>No mailbox password supplied</i>.</li>
+            <li><b><code>X-Mail-Imap-Host</code> / <code>X-Mail-Smtp-Host</code></b> — leave empty for a known provider, and they are filled in from your address. Required for anything else; your provider calls them the <i>incoming</i> and <i>outgoing</i> mail server.</li>
           </ul>
+          <p class="muted">
+            The same object works anywhere your client keeps MCP servers — the tabs on either side
+            of this one are just different file names. Add
+            <code>"X-Mail-Read-Only": "true"</code> to forbid every change, or
+            <code>"X-Mail-Allowed-Recipients": "@yourcompany.com"</code> to limit who can be
+            written to; both are explained under <a href="#safety">Safety</a>.
+          </p>
           <div class="note calm">
-            <b>Do not commit a real password.</b> Writing <code>"${MAIL_PASSWORD}"</code> as above
-            keeps the file shareable: Claude Code and Cursor substitute environment variables, so
-            the secret stays in your shell.
+            <b>Do not commit a real password.</b> Keep <code>.mcp.json</code> out of version
+            control, or write <code>"X-Mail-Password": "${MAIL_PASSWORD}"</code> — Claude Code and
+            Cursor substitute environment variables, so the file stays shareable and the secret
+            stays in your shell.
           </div>
         </div>
 
@@ -580,11 +593,11 @@ npm install &amp;&amp; npm run build</pre></div>
           <div class="codewrap"><button class="copy">copy</button><pre>{
   <span class="c-key">"mcpServers"</span>: {
     <span class="c-key">"mail"</span>: {
-      <span class="c-key">"command"</span>: <span class="c-str">"node"</span>,
-      <span class="c-key">"args"</span>: [<span class="c-str">"/absolute/path/mail-mcp/dist/index.js"</span>],
-      <span class="c-key">"env"</span>: {
-        <span class="c-key">"MAIL_USER"</span>: <span class="c-str">"you@fastmail.com"</span>,
-        <span class="c-key">"MAIL_PASSWORD"</span>: <span class="c-str">"your-app-password"</span>
+      <span class="c-key">"type"</span>: <span class="c-str">"http"</span>,
+      <span class="c-key">"url"</span>: <span class="c-str">"https://mail-mcp.webapace.ink/mcp"</span>,
+      <span class="c-key">"headers"</span>: {
+        <span class="c-key">"X-Mail-User"</span>: <span class="c-str">"you@fastmail.com"</span>,
+        <span class="c-key">"X-Mail-Password"</span>: <span class="c-str">"your-app-password"</span>
       }
     }
   }
@@ -597,11 +610,10 @@ npm install &amp;&amp; npm run build</pre></div>
           <div class="codewrap"><button class="copy">copy</button><pre>{
   <span class="c-key">"mcpServers"</span>: {
     <span class="c-key">"mail"</span>: {
-      <span class="c-key">"command"</span>: <span class="c-str">"node"</span>,
-      <span class="c-key">"args"</span>: [<span class="c-str">"/absolute/path/mail-mcp/dist/index.js"</span>],
-      <span class="c-key">"env"</span>: {
-        <span class="c-key">"MAIL_USER"</span>: <span class="c-str">"you@fastmail.com"</span>,
-        <span class="c-key">"MAIL_PASSWORD"</span>: <span class="c-str">"your-app-password"</span>
+      <span class="c-key">"url"</span>: <span class="c-str">"https://mail-mcp.webapace.ink/mcp"</span>,
+      <span class="c-key">"headers"</span>: {
+        <span class="c-key">"X-Mail-User"</span>: <span class="c-str">"you@fastmail.com"</span>,
+        <span class="c-key">"X-Mail-Password"</span>: <span class="c-str">"your-app-password"</span>
       }
     }
   }
@@ -618,20 +630,25 @@ npm install &amp;&amp; npm run build</pre></div>
         </p>
         <div class="tblwrap">
           <table>
-            <thead><tr><th>Setting</th><th>Default</th><th>What it does</th></tr></thead>
+            <thead><tr><th>Header</th><th>Default</th><th>What it does</th></tr></thead>
             <tbody>
-              <tr><td class="mono">MAIL_ALLOWED_RECIPIENTS</td><td>—</td><td>Mail may only go to these addresses or <code>@domains</code>. To, Cc and Bcc are all checked, before anything reaches the outgoing server</td></tr>
-              <tr><td class="mono">MAIL_READ_ONLY</td><td class="mono">false</td><td><code>true</code> — the assistant can read everything and change nothing</td></tr>
-              <tr><td class="mono">MAIL_ALLOWED_FOLDERS</td><td>—</td><td>Only these folders and their subfolders are reachable, for reading as well as writing</td></tr>
-              <tr><td class="mono">MAIL_DEFAULT_FOLDER</td><td class="mono">INBOX</td><td>Folder used when a request does not name one</td></tr>
-              <tr><td class="mono">MAIL_FROM</td><td class="mono">MAIL_USER</td><td>Address in the From header, when the login is not one</td></tr>
-              <tr><td class="mono">MAIL_APPEND_TO_SENT</td><td class="mono">true</td><td><code>false</code> — do not keep a copy of what was sent</td></tr>
+              <tr><td class="mono">X-Mail-User <span class="req">*</span></td><td>—</td><td>The address you sign in with. <code>Authorization: Basic</code> is accepted instead of this pair</td></tr>
+              <tr><td class="mono">X-Mail-Password <span class="req">*</span></td><td>—</td><td>The app-specific password from step 1</td></tr>
+              <tr><td class="mono">X-Mail-Imap-Host</td><td>from your address</td><td>Incoming server, for a mailbox with no preset. <code>X-Mail-Imap-Port</code> and <code>-Secure</code> alongside it</td></tr>
+              <tr><td class="mono">X-Mail-Smtp-Host</td><td>from your address</td><td>Outgoing server, likewise with <code>-Port</code> and <code>-Secure</code></td></tr>
+              <tr><td class="mono">X-Mail-Allowed-Recipients</td><td>—</td><td>Mail may only go to these addresses or <code>@domains</code>. To, Cc and Bcc are all checked, before anything reaches the outgoing server</td></tr>
+              <tr><td class="mono">X-Mail-Read-Only</td><td class="mono">false</td><td><code>true</code> — the assistant can read everything and change nothing</td></tr>
+              <tr><td class="mono">X-Mail-Allowed-Folders</td><td>—</td><td>Only these folders and their subfolders are reachable, for reading as well as writing</td></tr>
+              <tr><td class="mono">X-Mail-Default-Folder</td><td class="mono">INBOX</td><td>Folder used when a request does not name one</td></tr>
+              <tr><td class="mono">X-Mail-From</td><td>your user</td><td>Address in the From header, when the login is not one</td></tr>
+              <tr><td class="mono">X-Mail-Append-To-Sent</td><td class="mono">true</td><td><code>false</code> — do not keep a copy of what was sent</td></tr>
             </tbody>
           </table>
         </div>
         <p class="muted">
-          The full list, including timeouts and size caps, is in <code>.env.example</code> and the
-          README.
+          Every one of these is an environment variable too, for a copy you run yourself —
+          <code>MAIL_READ_ONLY</code>, <code>MAIL_ALLOWED_RECIPIENTS</code> and so on. The full
+          list, including timeouts and size caps, is in <code>.env.example</code> and the README.
         </p>
       </div>
 
@@ -657,9 +674,14 @@ npm install &amp;&amp; npm run build</pre></div>
     <p class="muted">
       If it reports that the credentials were rejected, the message names your provider and what
       it wants — nearly always an app-specific password where an account password was given. If
-      the assistant says it has no such tool, the connection was not registered: check the path
-      to <code>dist/index.js</code>, and restart the app.
+      the assistant says it has no such tool, the connection was not registered: check the URL
+      ends in <code>/mcp</code>, that the headers are spelled exactly as above, and restart the app.
     </p>
+    <p class="muted">
+      You can also check the service itself from a terminal — this needs no credentials and should
+      answer <code>{"status":"ok"}</code>:
+    </p>
+    <div class="codewrap"><button class="copy">copy</button><pre>curl https://mail-mcp.webapace.ink/health</pre></div>
   </div>
 </section>
 
@@ -774,7 +796,7 @@ npm install &amp;&amp; npm run build</pre></div>
       <div class="card">
         <h4>A recipient allowlist</h4>
         <p>
-          <code>MAIL_ALLOWED_RECIPIENTS=@yourcompany.com</code> — mail can only be addressed to
+          <code>X-Mail-Allowed-Recipients: @yourcompany.com</code> — mail can only be addressed to
           those. To, Cc and Bcc are checked together, before the message reaches the outgoing
           server. The one setting worth having even when everything else is open.
         </p>
@@ -782,14 +804,14 @@ npm install &amp;&amp; npm run build</pre></div>
       <div class="card">
         <h4>Read-only</h4>
         <p>
-          <code>MAIL_READ_ONLY=true</code> refuses every tool that would send, move, flag or
+          <code>X-Mail-Read-Only: true</code> refuses every tool that would send, move, flag or
           delete. Searching and reading keep working completely.
         </p>
       </div>
       <div class="card">
         <h4>A folder allowlist</h4>
         <p>
-          <code>MAIL_ALLOWED_FOLDERS=INBOX</code> puts everything else out of reach, for reading
+          <code>X-Mail-Allowed-Folders: INBOX</code> puts everything else out of reach, for reading
           as well as writing. Subfolders of a listed folder come along.
         </p>
       </div>
@@ -809,10 +831,11 @@ npm install &amp;&amp; npm run build</pre></div>
       </table>
     </div>
 
-    <h3>Where your password lives</h3>
+    <h3>How your password is handled</h3>
     <ul class="plain">
-      <li><b>On your machine.</b> In the recommended setup the server runs locally and talks to exactly two parties: your assistant and your mail server. Nothing passes through anyone else.</li>
-      <li><b>Nothing is stored by this software.</b> No database, no cache of your messages, nothing written to disk. Connections are held open briefly so repeated requests do not re-authenticate, and that is all.</li>
+      <li><b>It is not stored.</b> Each request carries its own credentials, is served, and is discarded. There are no accounts and no database, and nothing is written to disk. Authenticated connections are held open for a few idle minutes so a burst of requests does not re-authenticate, and that is all.</li>
+      <li><b>It is used only to reach your mail server.</b> The service makes no other outbound calls.</li>
+      <li><b>It does pass through the host, though.</b> That is the honest cost of a hosted endpoint, and a mailbox password is not a token scoped to one project. If that is unacceptable for you or your organisation, run your own copy — <a href="#selfhost">it is a few commands</a> — and nothing leaves your network.</li>
       <li><b>Revoking is instant.</b> Delete the app-specific password in your provider's settings and the access is gone, with no effect on your account.</li>
       <li><b>Least privilege still applies.</b> An app password that only permits IMAP and SMTP cannot be used to log in to the web interface or change your account.</li>
       <li><b>What the assistant reads becomes part of your conversation with it</b>, exactly as if you had pasted it in yourself. That is worth remembering before pointing it at a mailbox full of things you would not paste.</li>
@@ -900,7 +923,7 @@ npm install &amp;&amp; npm run build</pre></div>
 
     <details>
       <summary>Can the assistant email anyone it likes?</summary>
-      <p>Not if you set a recipient allowlist. <code>MAIL_ALLOWED_RECIPIENTS</code> restricts
+      <p>Not if you set a recipient allowlist. <code>X-Mail-Allowed-Recipients</code> restricts
       outgoing mail to named addresses or whole domains, checked across To, Cc and Bcc before
       anything reaches the outgoing server. There is also a full read-only mode in which nothing
       can be sent or changed at all.</p>
@@ -914,11 +937,12 @@ npm install &amp;&amp; npm run build</pre></div>
     </details>
 
     <details>
-      <summary>Does my password leave my machine?</summary>
-      <p>Not in the setup documented above. The server runs locally and talks to exactly two
-      parties: your assistant and your mail server. A hosted endpoint also exists for convenience,
-      and there the password does pass through the host — which is precisely why the local mode is
-      the one described first.</p>
+      <summary>Does my password pass through your server?</summary>
+      <p>On the hosted endpoint, yes — it arrives as a header, is used to open the connection to
+      your mail server, and is discarded. Nothing is stored: no accounts, no database, nothing on
+      disk. But a mailbox password is not a token scoped to one project, so if that trade is not
+      acceptable, run the same server yourself. It speaks stdio as well, started by your assistant
+      on your own machine, and then nothing leaves your network at all.</p>
     </details>
 
     <details>
@@ -945,9 +969,10 @@ npm install &amp;&amp; npm run build</pre></div>
 
     <details>
       <summary>My company mail server is only reachable inside the network.</summary>
-      <p>Then run the server locally, which is the recommended mode anyway: it connects from your
-      machine, so anything your machine can reach works — a server on a private network, or a
-      Proton Bridge listening on localhost.</p>
+      <p>Then the hosted endpoint cannot reach it, and requests for private addresses are refused
+      on purpose. Run your own copy instead — see <a href="#selfhost">Running it yourself</a>. It
+      connects from your machine, so anything your machine can reach works, including a server on
+      a private network or a Proton Bridge listening on localhost.</p>
     </details>
 
     <details>
@@ -976,9 +1001,11 @@ npm install &amp;&amp; npm run build</pre></div>
           <tr><td class="mono">The server refused the message (550)</td><td>The account is not allowed to send as the configured From address. Set <code>MAIL_FROM</code> to an address it may use</td></tr>
           <tr><td class="mono">No folder X in this account</td><td>The error lists the real names. Providers localise them, and Gmail nests everything under <code>[Gmail]</code> — or just say "sent", "trash", "archive" and let it resolve</td></tr>
           <tr><td class="mono">No message with UID N</td><td>UIDs belong to one folder. A message that has been moved has a different UID in its new home</td></tr>
-          <tr><td>The assistant has no mail tools</td><td>The connection was not registered. Check the path to <code>dist/index.js</code>, make sure <code>npm run build</code> ran, and restart the app completely</td></tr>
+          <tr><td>The assistant has no mail tools</td><td>The connection was not registered. Check the URL ends in <code>/mcp</code>, that the transport is HTTP, and restart the app completely. <code>curl https://mail-mcp.webapace.ink/health</code> tells you whether the service itself is up</td></tr>
+          <tr><td class="mono">No mailbox password supplied</td><td>The <code>X-Mail-Password</code> header did not arrive. Some clients drop unknown headers — check the spelling and that it sits in the right block</td></tr>
           <tr><td>Edits to the config change nothing</td><td>In Claude Code a server added to the local scope (in <code>~/.claude.json</code>) wins over the project's <code>.mcp.json</code>. <code>claude mcp list</code> shows which is in use; <code>claude mcp remove mail -s local</code> drops the stale one</td></tr>
-          <tr><td class="mono">certificate</td><td>An internal server with its own certificate authority. Set <code>MAIL_TLS_REJECT_UNAUTHORIZED=false</code>, knowing it applies to the whole process</td></tr>
+          <tr><td class="mono">Refusing to connect to the private address…</td><td>Your mail server resolves to a private network the hosted service cannot and should not reach. Run your own copy instead</td></tr>
+          <tr><td class="mono">certificate</td><td>An internal server with its own certificate authority. Self-host and set <code>MAIL_TLS_REJECT_UNAUTHORIZED=false</code> there, knowing it applies to the whole process</td></tr>
           <tr><td class="mono">Refused: … MAIL_READ_ONLY / MAIL_ALLOWED_…</td><td>Working as intended: a guard rail you configured stopped the request</td></tr>
         </tbody>
       </table>
@@ -986,61 +1013,62 @@ npm install &amp;&amp; npm run build</pre></div>
   </div>
 </section>
 
-<!-- ============================================================ HOSTED -->
-<section id="hosted">
+<!-- ============================================================ SELF-HOSTING -->
+<section id="selfhost">
   <div class="wrap">
-    <p class="kicker">Hosted mode</p>
-    <h2>Running it as a service</h2>
+    <p class="kicker">Self-hosting</p>
+    <h2>Running it yourself</h2>
     <p class="lead">
-      The same server also speaks HTTP, serving this page on <code>/</code> and an MCP endpoint on
-      <code>/mcp</code> where every request carries its own mailbox credentials. One deployment
-      then serves many mailboxes without holding any state.
+      Three cases call for your own copy: a mail server that lives only inside your network, a
+      policy that forbids credentials passing through someone else's host, and simply preferring
+      that a mailbox password never leaves your machine. All three are solved the same way.
     </p>
-
-    <div class="codewrap"><button class="copy">copy</button><pre>claude mcp add --transport http mail \
-  https://mail-mcp.webapace.ink/mcp \
-  --header "X-Mail-User: you@fastmail.com" \
-  --header "X-Mail-Password: your-app-password"</pre></div>
-
-    <p class="muted">
-      Every environment variable has a header equivalent — <code>X-Mail-Imap-Host</code>,
-      <code>X-Mail-Smtp-Host</code>, <code>X-Mail-Read-Only</code>,
-      <code>X-Mail-Allowed-Recipients</code> and the rest;
-      <code>Authorization: Basic</code> works instead of the two credential headers. The full
-      list is in the README.
-    </p>
-
-    <div class="note warn">
-      <b>Understand the trade before using it.</b> Your mailbox password passes through the host
-      on every request. The service keeps nothing — no accounts, no database, nothing on disk,
-      one throwaway server instance per request — but a mailbox password is not a scoped token,
-      and no storage policy changes that. For mail, the local setup at the top of this page is
-      the better default, and it is not harder.
-    </div>
 
     <div class="grid">
       <div class="card">
-        <h4>Your own container</h4>
+        <h4>As a local process</h4>
         <p>
-          <code>docker build -t mail-mcp .</code> and it serves the same page and endpoint at your
-          own address. Credentials stay inside your network, and
-          <code>MAIL_ALLOWED_HOSTS</code> can pin it to your own mail servers.
+          The server speaks stdio, the transport MCP clients start themselves — so nothing listens
+          on the network at all. Configuration comes from environment variables
+          (<code>MAIL_USER</code>, <code>MAIL_PASSWORD</code>, …) instead of headers.
         </p>
       </div>
       <div class="card">
-        <h4>Private networks are refused</h4>
+        <h4>As a container</h4>
         <p>
-          Without an explicit allowlist a hosted deployment will not connect to
-          <code>localhost</code> or private address ranges, so it cannot be used to probe the
-          network it runs in. Reaching an internal mail server is a job for a local install.
+          The image serves the same page on <code>/</code> and the same MCP endpoint on
+          <code>/mcp</code> at your own address. Every header on this page behaves identically,
+          and <code>MAIL_ALLOWED_HOSTS</code> can pin it to your own mail servers.
         </p>
       </div>
+    </div>
+
+    <p class="muted">Locally it is three commands and one <code>claude mcp add</code>:</p>
+    <div class="codewrap"><button class="copy">copy</button><pre>git clone git@github.com:amalychev/mail-mcp.git
+cd mail-mcp
+npm install &amp;&amp; npm run build
+
+claude mcp add mail \
+  --env MAIL_USER=you@fastmail.com \
+  --env MAIL_PASSWORD=your-app-password \
+  -- node /absolute/path/mail-mcp/dist/index.js</pre></div>
+    <p class="muted">
+      Requires Node.js 20 or newer. Everything else on this page — the tools, the folder aliases,
+      the guard rails — works exactly the same.
+    </p>
+
+    <div class="note">
+      <b>Why a public endpoint refuses internal servers.</b> Without an explicit allowlist a
+      hosted deployment will not connect to <code>localhost</code> or private address ranges, so
+      it cannot be used to probe the network it runs in. An internal mail server, or a Proton
+      Bridge on your own machine, is therefore a job for a local install — which is the right
+      answer anyway.
     </div>
 
     <div class="note">
       <b>Where to look next.</b> The repository's <code>README.md</code> covers both modes in
-      full: every environment variable, the provider presets, the Docker build, the deployment
-      script, and how to add tools of your own.
+      full: every environment variable and its header equivalent, the provider presets, the Docker
+      build, the deployment script, and how to add tools of your own.
     </div>
   </div>
 </section>
@@ -1049,7 +1077,7 @@ npm install &amp;&amp; npm run build</pre></div>
 
 <footer>
   <div class="wrap">
-    Mail MCP · works with any IMAP mailbox ·
+    Mail MCP · endpoint <code>https://mail-mcp.webapace.ink/mcp</code> ·
     source and full documentation on
     <a href="https://github.com/amalychev/mail-mcp" rel="noopener">GitHub</a>
   </div>

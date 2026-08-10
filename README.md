@@ -16,13 +16,81 @@ downloaded and handed to the model as an image — not as a filename it cannot o
 
 | Mode | Transport | Configuration comes from | Use it when |
 |---|---|---|---|
-| **Local** | stdio | environment variables | the default for mail — credentials never leave the machine |
 | **Hosted** | Streamable HTTP on `/mcp` | request headers, per call | clients should connect to a URL with nothing installed |
+| **Local** | stdio | environment variables | the mailbox is private, or credentials must not leave the machine |
 
-Mail is not a scoped API token: the password usually opens the whole mailbox, and often the
-account behind it. Running locally is therefore the recommended mode, and the hosted endpoint
-exists for the cases where that is not practical — see [Hosted mode](#hosted-mode) for what
-that choice actually costs.
+The public deployment lives at `https://mail-mcp.webapace.ink` — the landing page on `/`, the
+MCP endpoint on `/mcp`. Connecting to it needs no install:
+
+```bash
+claude mcp add --transport http mail \
+  https://mail-mcp.webapace.ink/mcp \
+  --header "X-Mail-User: you@fastmail.com" \
+  --header "X-Mail-Password: your-app-password"
+```
+
+Or write the configuration yourself. The same object goes into `.mcp.json` in a repository,
+`~/.claude.json`, `claude_desktop_config.json` or `.cursor/mcp.json` — fill in the blanks:
+
+```json
+{
+  "mcpServers": {
+    "mail": {
+      "type": "http",
+      "url": "https://mail-mcp.webapace.ink/mcp",
+      "headers": {
+        "X-Mail-User": "",
+        "X-Mail-Password": "",
+        "X-Mail-Imap-Host": "",
+        "X-Mail-Smtp-Host": ""
+      }
+    }
+  }
+}
+```
+
+| Header | Fill in with | If left empty |
+|---|---|---|
+| `X-Mail-User` | the address you sign in with | the request is refused — this one is required |
+| `X-Mail-Password` | the app-specific password from your provider | the request is refused — this one is required too |
+| `X-Mail-Imap-Host` | `imap.example.com`, for a mailbox with no preset | derived from your address, when its domain is one of the known providers |
+| `X-Mail-Smtp-Host` | `smtp.example.com`, likewise | derived from your address; without either, sending is unavailable |
+
+`X-Mail-Read-Only`, `X-Mail-Allowed-Recipients` and `X-Mail-Allowed-Folders` can be added the
+same way; see [Hosted mode](#hosted-mode) for the full header list.
+
+Keep the file out of version control, or write `"X-Mail-Password": "${MAIL_PASSWORD}"` — Claude
+Code and Cursor substitute environment variables, so the secret stays in your shell.
+
+**One thing to weigh.** Unlike a project-scoped API token, a mailbox password opens the whole
+mailbox, and on the hosted endpoint it passes through the host on every request. Nothing is
+stored there, and the guard rails below narrow what can be done with it — but if that trade is
+not acceptable, [run it locally](#running-it-locally); it is a few commands and everything
+behaves identically.
+
+Several mailboxes at once — several entries with different names:
+
+```json
+{
+  "mcpServers": {
+    "mail-work":     { "type": "http", "url": "https://mail-mcp.webapace.ink/mcp", "headers": { "X-Mail-User": "me@company.com",  "X-Mail-Password": "…" } },
+    "mail-personal": { "type": "http", "url": "https://mail-mcp.webapace.ink/mcp", "headers": { "X-Mail-User": "me@fastmail.com", "X-Mail-Password": "…" } }
+  }
+}
+```
+
+Two things worth knowing when a change appears to do nothing:
+
+- In Claude Code an entry added to the **local** scope (kept in `~/.claude.json`) takes
+  precedence over the project's `.mcp.json`. `claude mcp list` shows what is actually in use,
+  and `claude mcp remove <name> -s local` drops a stale one.
+- Client configuration is read at startup, so restart the app after editing the file.
+
+The rest of this document is for running your own copy in either mode.
+
+---
+
+## Running it locally
 
 ```bash
 git clone git@github.com:amalychev/mail-mcp.git
@@ -31,9 +99,8 @@ npm install
 npm run build
 ```
 
-Requires Node.js 20 or newer.
-
-### Connecting from Claude Code
+Requires Node.js 20 or newer. Then point your assistant at the built file, with the
+configuration as environment variables instead of headers:
 
 ```bash
 claude mcp add mail \
@@ -43,10 +110,10 @@ claude mcp add mail \
 ```
 
 That is the whole setup for a known provider: the IMAP and SMTP hosts are derived from the
-address. Ask for `mail_whoami` to confirm — it logs in to both servers and reports what it
-found.
+address. Nothing listens on the network in this mode, and the credentials never leave the
+machine. Ask for `mail_whoami` to confirm — it logs in to both servers and reports what it found.
 
-Or drop a `.mcp.json` into the root of your working repository:
+Or in a file, which travels with the project:
 
 ```json
 {
@@ -66,27 +133,7 @@ Or drop a `.mcp.json` into the root of your working repository:
 ```
 
 The same block works in Claude Desktop (`claude_desktop_config.json`) and Cursor
-(`.cursor/mcp.json`). Write `"${MAIL_PASSWORD}"` rather than the password itself — Claude Code
-and Cursor substitute environment variables, so the file stays shareable and the secret stays
-in your shell.
-
-Several mailboxes at once — several entries with different names:
-
-```json
-{
-  "mcpServers": {
-    "mail-work":     { "command": "node", "args": ["…/dist/index.js"], "env": { "MAIL_USER": "me@company.com", "MAIL_PASSWORD": "…" } },
-    "mail-personal": { "command": "node", "args": ["…/dist/index.js"], "env": { "MAIL_USER": "me@fastmail.com", "MAIL_PASSWORD": "…" } }
-  }
-}
-```
-
-Two things worth knowing when a change appears to do nothing:
-
-- In Claude Code an entry added to the **local** scope (kept in `~/.claude.json`) takes
-  precedence over the project's `.mcp.json`. `claude mcp list` shows what is actually in use,
-  and `claude mcp remove <name> -s local` drops a stale one.
-- Client configuration is read at startup, so restart the app after editing the file.
+(`.cursor/mcp.json`).
 
 ---
 
