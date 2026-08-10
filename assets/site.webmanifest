@@ -1,0 +1,15 @@
+{
+  "name": "Mail MCP — connect your AI assistant to your mailbox",
+  "short_name": "Mail MCP",
+  "description": "Model Context Protocol server for any IMAP/SMTP mailbox: read, search, reply, send and organise email, including the attachments inside it.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "minimal-ui",
+  "background_color": "#0e1116",
+  "theme_color": "#a78bfa",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" }
+  ]
+}

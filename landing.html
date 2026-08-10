@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mail MCP Server — Connect Claude or Cursor to Your Email</title>
+<meta name="description" content="MCP server for any IMAP mailbox — Gmail, Outlook, iCloud, Fastmail, your own server. 20 tools to read, search, reply and send email, and your assistant can open the attachments.">
+<link rel="canonical" href="https://mail-mcp.webapace.ink/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="author" content="Mail MCP">
+<meta name="application-name" content="Mail MCP">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+
+<!-- Icons -->
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<!-- Link previews (Open Graph and X/Twitter) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mail MCP">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://mail-mcp.webapace.ink/">
+<meta property="og:title" content="Mail MCP Server — Connect Claude or Cursor to Your Email">
+<meta property="og:description" content="20 tools for reading, searching, replying and sending mail from any IMAP mailbox — including the attachments people send you. Works with Gmail, Outlook, iCloud, Fastmail and any server of your own.">
+<meta property="og:image" content="https://mail-mcp.webapace.ink/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mail MCP — your AI assistant, reading your inbox. 20 tools, about two minutes of setup.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mail MCP Server — Connect Claude or Cursor to Your Email">
+<meta name="twitter:description" content="20 tools for reading, searching, replying and sending mail from any IMAP mailbox — attachments included.">
+<meta name="twitter:image" content="https://mail-mcp.webapace.ink/og-image.png">
+<meta name="twitter:image:alt" content="Mail MCP — your AI assistant, reading your inbox.">
+<style>
+  :root {
+    --bg: #0e1116;
+    --bg-soft: #151a21;
+    --bg-card: #171d25;
+    --line: #262e38;
+    --line-soft: #1e252e;
+    --text: #e6e9ee;
+    --muted: #9aa4b2;
+    --accent: #a78bfa;
+    --accent-2: #7c3aed;
+    --code-bg: #0b0e13;
+    --code-text: #dfe5ee;
+    --ok: #4ec9a5;
+    --warn: #e5c07b;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #ffffff; --bg-soft: #f5f7f9; --bg-card: #ffffff; --line: #e2e7ec; --line-soft: #edf0f3;
+      --text: #141a21; --muted: #58626e; --accent: #6d28d9; --accent-2: #5b21b6;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--sans); font-size: 16px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 24px; }
+  /*
+   * Grid and flex children default to min-width: auto, so one wide code block
+   * would stretch its whole track and push the page past the viewport. Every
+   * container that can hold code or a table opts out of that.
+   */
+  .steps, .grid, .prompts, .tabs,
+  .step, .card, .prompt, .panel, .tblwrap, .note, details { min-width: 0; }
+  p, li, td, th, summary, h1, h2, h3, h4 { overflow-wrap: break-word; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+
+  /* ---------- hero ---------- */
+  header {
+    border-bottom: 1px solid var(--line);
+    background: radial-gradient(120% 100% at 10% 0%, rgba(167,139,250,.14), transparent 60%);
+  }
+  /* padding-block only: the horizontal padding comes from .wrap and must survive. */
+  .hero { padding-block: 74px 58px; }
+  .brand { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
+  .brand img { border-radius: 8px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono);
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+    border: 1px solid rgba(167,139,250,.35); border-radius: 100px; padding: 5px 12px;
+  }
+  h1 {
+    font-size: clamp(34px, 5.6vw, 54px); line-height: 1.08; margin: 22px 0 0;
+    letter-spacing: -.025em; font-weight: 680;
+  }
+  h1 .grad {
+    background: linear-gradient(92deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .lede { font-size: 19px; color: var(--muted); max-width: 64ch; margin: 20px 0 0; }
+  .stats { display: flex; flex-wrap: wrap; gap: 38px; margin-top: 38px; }
+  .stat b { display: block; font-size: 28px; font-family: var(--mono); letter-spacing: -.02em; }
+  .stat span { font-size: 13px; color: var(--muted); }
+  .endpoint {
+    display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 34px;
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 18px;
+  }
+  .endpoint-label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  }
+  .endpoint code { font-size: 15px; color: var(--accent); overflow-wrap: anywhere; }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 90%, transparent);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--line);
+  }
+  nav .wrap { display: flex; gap: 24px; overflow-x: auto; padding-top: 13px; padding-bottom: 13px; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 14px; white-space: nowrap; }
+  nav a:hover { color: var(--accent); }
+
+  /* ---------- sections ---------- */
+  section { padding: 60px 0; border-bottom: 1px solid var(--line); }
+  .kicker {
+    font-size: 12.5px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .12em;
+    color: var(--accent); margin: 0 0 8px; font-weight: 600;
+  }
+  h2 { font-size: 28px; margin: 0 0 14px; letter-spacing: -.02em; font-weight: 640; }
+  h3 { font-size: 18.5px; margin: 36px 0 12px; font-weight: 620; }
+  h4 { font-size: 15.5px; margin: 0 0 8px; font-weight: 620; }
+  p { max-width: 76ch; }
+  .muted { color: var(--muted); }
+  .lead { font-size: 17px; color: var(--muted); margin-top: 0; }
+
+  /* ---------- code ---------- */
+  .codewrap { position: relative; min-width: 0; max-width: 100%; }
+  pre {
+    background: var(--code-bg); color: var(--code-text); border: 1px solid var(--line);
+    border-radius: 10px; padding: 16px 18px; overflow-x: auto; max-width: 100%;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.7; margin: 14px 0;
+  }
+  code { font-family: var(--mono); font-size: .92em; }
+  :not(pre) > code {
+    background: var(--bg-soft); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px;
+    /* Identifiers like MAIL_TLS_REJECT_UNAUTHORIZED must not widen the page. */
+    overflow-wrap: anywhere;
+  }
+  .copy {
+    position: absolute; top: 22px; right: 10px; font-family: var(--mono); font-size: 11px;
+    color: var(--muted); background: var(--bg-soft); border: 1px solid var(--line);
+    border-radius: 6px; padding: 3px 9px; cursor: pointer; opacity: 0; transition: opacity .15s;
+  }
+  .codewrap:hover .copy { opacity: 1; }
+  .copy:hover { color: var(--accent); border-color: var(--accent); }
+  .c-key { color: #79b8ff; } .c-str { color: #9ecbff; } .c-cm { color: #6b7684; } .c-num { color: var(--warn); }
+
+  /* ---------- steps ---------- */
+  .steps { counter-reset: s; display: grid; gap: 30px; margin-top: 26px; }
+  .step { position: relative; padding-left: 54px; }
+  .step::before {
+    counter-increment: s; content: counter(s);
+    position: absolute; left: 0; top: -2px; width: 34px; height: 34px; border-radius: 10px;
+    display: grid; place-items: center; font-family: var(--mono); font-size: 14.5px;
+    background: var(--bg-soft); border: 1px solid var(--line); color: var(--accent);
+  }
+  .step > h3 { margin: 2px 0 8px; font-size: 18px; }
+  ol.clicks, ul.plain { color: var(--muted); padding-left: 20px; max-width: 76ch; }
+  ol.clicks li, ul.plain li { margin: 6px 0; }
+
+  /* ---------- tabs ---------- */
+  .tabs { display: flex; gap: 6px; margin: 20px 0 0; flex-wrap: wrap; }
+  .tab {
+    font-size: 13.5px; font-family: var(--sans); color: var(--muted); background: transparent;
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer;
+  }
+  .tab[aria-selected="true"] { color: var(--accent); border-color: var(--accent); background: rgba(167,139,250,.08); }
+  .panel[hidden] { display: none; }
+
+  /* ---------- tables ---------- */
+  .tblwrap { overflow-x: auto; margin: 18px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; border-bottom-color: var(--line); }
+  td.mono { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+  .req { color: var(--accent); font-family: var(--mono); font-size: 12px; }
+
+  /* ---------- cards ---------- */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 22px; }
+  .card { background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .card p { margin: 0; font-size: 14.5px; color: var(--muted); }
+  .card .n { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+
+  .note {
+    border-left: 3px solid var(--accent); background: var(--bg-soft);
+    padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 22px 0; font-size: 15px; max-width: 80ch;
+  }
+  .note b { color: var(--accent); }
+  .note.calm { border-left-color: var(--ok); }
+  .note.calm b { color: var(--ok); }
+  .note.warn { border-left-color: var(--warn); }
+  .note.warn b { color: var(--warn); }
+
+  /* ---------- prompt examples ---------- */
+  .prompts { display: grid; gap: 10px; margin-top: 18px; }
+  .prompt {
+    display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px; padding: 13px 16px;
+  }
+  .prompt q { font-size: 15px; }
+  .prompt q::before { content: "“"; } .prompt q::after { content: "”"; }
+  .prompt .uses { font-family: var(--mono); font-size: 11.5px; color: var(--muted); text-align: right; }
+  @media (max-width: 700px) { .prompt { grid-template-columns: 1fr; } .prompt .uses { text-align: left; } }
+
+  /* ---------- tool explorer ---------- */
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 22px 0 8px; }
+  #search {
+    flex: 1 1 240px; min-width: 200px; background: var(--bg-soft); border: 1px solid var(--line);
+    border-radius: 9px; padding: 9px 13px; color: var(--text); font-family: var(--mono); font-size: 13.5px;
+  }
+  #search:focus { outline: none; border-color: var(--accent); }
+  .chip {
+    font-size: 13px; color: var(--muted); background: transparent; border: 1px solid var(--line);
+    border-radius: 100px; padding: 5px 13px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: rgba(167,139,250,.08); }
+  #count { font-size: 13px; color: var(--muted); font-family: var(--mono); }
+  .rw {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; padding: 2px 7px;
+    border-radius: 5px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+  }
+  .rw.w { color: var(--warn); border-color: rgba(229,192,123,.4); }
+  .rw.r { color: var(--ok); border-color: rgba(78,201,165,.35); }
+  tr[hidden] { display: none; }
+
+  /* ---------- faq ---------- */
+  details {
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px;
+    margin: 10px 0; background: var(--bg-card);
+  }
+  details[open] { border-color: rgba(167,139,250,.4); }
+  summary { cursor: pointer; font-weight: 600; font-size: 15.5px; }
+  summary::marker { color: var(--accent); }
+  details p { margin: 12px 0 0; color: var(--muted); font-size: 14.5px; }
+
+  footer { padding: 42px 0 66px; color: var(--muted); font-size: 14px; }
+
+  /* ---------- narrow screens ---------- */
+  @media (max-width: 560px) {
+    body { font-size: 15.5px; }
+    .wrap { padding: 0 16px; }
+    .hero { padding-block: 52px 44px; }
+    .lede { font-size: 17px; }
+    .stats { gap: 26px; margin-top: 30px; }
+    .stat b { font-size: 24px; }
+    .endpoint { display: flex; width: 100%; padding: 12px 14px; gap: 6px; align-items: flex-start; flex-direction: column; }
+    section { padding: 46px 0; }
+    h2 { font-size: 24px; }
+    .steps { gap: 26px; }
+    .step { padding-left: 0; padding-top: 44px; }
+    .step::before { top: 0; }
+    pre { font-size: 12.5px; padding: 14px 14px; }
+    /* No hover on touch: show the button, and above the block so it covers no code. */
+    .copy { position: static; display: block; margin: 0 0 -4px auto; opacity: 1; }
+    /*
+     * Tables stack instead of scrolling sideways: the identifier and its default
+     * share a line, the explanation gets the full width underneath.
+     */
+    /* display:block as well, or the table keeps sizing itself to its widest cell. */
+    .tblwrap table { display: block; width: 100%; font-size: 14px; }
+    .tblwrap thead { display: none; }
+    /* tbody stays a row-group otherwise, and rebuilds the anonymous table box. */
+    .tblwrap tbody { display: block; width: 100%; }
+    .tblwrap tr { display: block; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .tblwrap tr:last-child { border-bottom: none; }
+    .tblwrap td { display: inline-block; border: none; padding: 0 10px 0 0; white-space: normal; }
+    .tblwrap td:first-child { color: var(--text); font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+    .tblwrap td:last-child { display: block; color: var(--muted); padding: 5px 0 0; }
+    .tblwrap tr[hidden] { display: none; }
+    .card { padding: 17px; }
+    details { padding: 13px 15px; }
+    .toolbar { gap: 8px; }
+    #search { flex-basis: 100%; }
+  }
+</style>
+
+<!-- Structured data: what the thing is, and the questions answered below. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://mail-mcp.webapace.ink/#app",
+      "name": "Mail MCP",
+      "alternateName": "Mail MCP Server",
+      "url": "https://mail-mcp.webapace.ink/",
+      "image": "https://mail-mcp.webapace.ink/og-image.png",
+      "applicationCategory": "CommunicationApplication",
+      "applicationSubCategory": "Model Context Protocol server",
+      "operatingSystem": "Any",
+      "description": "Model Context Protocol server that connects an AI assistant to any IMAP mailbox — Gmail, Outlook, iCloud, Fastmail or a server of your own. 20 tools cover reading, searching, threading, replying, sending, drafts, flags and folders, and attachments such as screenshots are downloaded and returned as images the assistant can actually look at.",
+      "softwareHelp": "https://mail-mcp.webapace.ink/#setup",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "20 email tools over the Model Context Protocol",
+        "Works with any IMAP and SMTP server, with presets for the common providers",
+        "Reads attachments, including screenshots, as images",
+        "Replies that thread correctly in the recipient's mail client",
+        "Read-only mode, a recipient allowlist and a folder allowlist",
+        "Runs locally over stdio so credentials never leave the machine"
+      ],
+      "codeRepository": "https://github.com/amalychev/mail-mcp"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://mail-mcp.webapace.ink/#website",
+      "url": "https://mail-mcp.webapace.ink/",
+      "name": "Mail MCP",
+      "description": "Setup guide and tool reference for the Mail Model Context Protocol server.",
+      "inLanguage": "en"
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://mail-mcp.webapace.ink/#faq",
+      "isPartOf": { "@id": "https://mail-mcp.webapace.ink/#website" },
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Which mail providers does this work with?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Any server that speaks IMAP, which is nearly all of them. Gmail, Outlook, Yahoo, iCloud, Fastmail, Zoho, Yandex, Mail.ru, GMX, AOL, Migadu and mailbox.org have presets, so the address alone is enough. For anything else, including a company server, you give the incoming and outgoing host names once." }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does my password not work?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Because almost every provider refuses the account password over IMAP. You need an app-specific password: a separate value generated in the provider's security settings, used only here, and revocable on its own. Gmail additionally requires 2-Step Verification before the option appears, and some providers need IMAP switched on in the web interface." }
+        },
+        {
+          "@type": "Question",
+          "name": "Can the assistant email anyone it likes?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Not if you set a recipient allowlist. MAIL_ALLOWED_RECIPIENTS restricts outgoing mail to named addresses or whole domains, and the check covers To, Cc and Bcc together, before anything reaches the outgoing server. There is also a full read-only mode in which nothing can be sent or changed at all." }
+        },
+        {
+          "@type": "Question",
+          "name": "Will it read my mail as read, or move things around by accident?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Reading a message leaves it unread unless you explicitly ask to mark it. Deleting means moving to Trash; erasing a message for good needs an explicit confirmation flag, and so does deleting a folder." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does my password leave my machine?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Not in the recommended setup. Run the server locally over stdio and it talks to exactly two parties: your assistant and your mail server. A hosted endpoint also exists for convenience, and there the password does pass through the host, which is why the local mode is the one documented first." }
+        },
+        {
+          "@type": "Question",
+          "name": "Can it read a screenshot someone emailed me?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. That is the difference between this and a plain text dump of your inbox. The server downloads the attachment and hands PNG, JPEG, GIF and WebP over as images the model can look at; text files arrive as text, and anything else as a file the assistant can still work with." }
+        },
+        {
+          "@type": "Question",
+          "name": "Will replies thread properly?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. A reply carries the In-Reply-To and References headers from the original, so it appears inside the conversation in the recipient's mail client instead of starting a new one. The original is marked as answered, as any mail client would." }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I connect two mailboxes at once?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Add two entries with different names, for example mail-work and mail-personal. The assistant sees both sets of tools and picks by name." }
+        },
+        {
+          "@type": "Question",
+          "name": "My company mail server is only reachable inside the network.",
+          "acceptedAnswer": { "@type": "Answer", "text": "Then run the server locally, which is the recommended mode anyway. It connects from your machine, so anything your machine can reach works, including a server on a private network or a Proton Bridge on localhost." }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens to a very large mailbox?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Nothing is downloaded wholesale. Searching runs on the server's own index, listings return summaries, and reading a message fetches only its body part — so a message carrying a 20 MB attachment still costs a few kilobytes to read." }
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<header>
+  <div class="wrap hero">
+    <div class="brand">
+      <img src="/favicon.svg" width="36" height="36" alt="Mail MCP logo" decoding="async">
+      <span class="badge">Model Context Protocol server</span>
+    </div>
+    <h1>Give your AI assistant<br>your <span class="grad">inbox</span></h1>
+    <p class="lede">
+      Read and search your mail, follow a conversation, draft the reply, send it — and
+      <b>actually look at the screenshot someone attached</b>, instead of being handed a
+      filename it cannot open. Any IMAP mailbox: Gmail, Outlook, iCloud, Fastmail, or your
+      company's own server.
+    </p>
+    <div class="stats">
+      <div class="stat"><b>20</b><span>tools</span></div>
+      <div class="stat"><b>any</b><span>IMAP mailbox</span></div>
+      <div class="stat"><b>~2 min</b><span>setup time</span></div>
+    </div>
+    <div class="endpoint">
+      <span class="endpoint-label">Install</span>
+      <code>git clone github.com/amalychev/mail-mcp</code>
+    </div>
+  </div>
+</header>
+
+<nav aria-label="Sections of this page">
+  <div class="wrap">
+    <a href="#what">What is this</a>
+    <a href="#setup">Setup</a>
+    <a href="#verify">Verify</a>
+    <a href="#use">Examples</a>
+    <a href="#attachments">Attachments</a>
+    <a href="#safety">Safety</a>
+    <a href="#tools">All 20 tools</a>
+    <a href="#faq">FAQ</a>
+    <a href="#trouble">Troubleshooting</a>
+    <a href="#hosted">Hosted mode</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ============================================================ WHAT -->
+<section id="what">
+  <div class="wrap">
+    <p class="kicker">Start here</p>
+    <h2>What this is, in plain words</h2>
+    <p class="lead">
+      An AI assistant has no mailbox. It cannot log in to yours, cannot see who wrote to you
+      yesterday, and cannot send anything on your behalf. This is the bridge: a small program
+      that runs on your own machine, holds your mail credentials, and gives the assistant a
+      precise set of things it may do with them.
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="n">01</div>
+        <h4>It runs on your computer</h4>
+        <p>Started by your assistant, talking to your mail server directly. No account here, no
+        service in the middle, nothing to sign up for.</p>
+      </div>
+      <div class="card">
+        <div class="n">02</div>
+        <h4>You give it one address and one password</h4>
+        <p>An app-specific password from your provider — the kind you can revoke on its own
+        without touching your account.</p>
+      </div>
+      <div class="card">
+        <div class="n">03</div>
+        <h4>The assistant gains 20 abilities</h4>
+        <p>"What came in overnight", "reply to Anna", "show me the invoice she attached" — asked
+        in normal words.</p>
+      </div>
+    </div>
+
+    <h3>What you need before you start</h3>
+    <ul class="plain">
+      <li><b>A mailbox that speaks IMAP</b> — which is nearly all of them. Gmail, Outlook, iCloud, Fastmail, Yandex and a dozen others are recognised from your address alone; anything else needs two host names you can copy from your provider's help page.</li>
+      <li><b>An app-specific password</b> for that mailbox. Creating one takes a minute and is step 1 below.</li>
+      <li><b>An assistant that speaks MCP</b> — Claude Code, Claude Desktop, Cursor and others.</li>
+      <li><b>Node.js 20 or newer</b>, because the server runs on your machine.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ SETUP -->
+<section id="setup">
+  <div class="wrap">
+    <p class="kicker">Setup</p>
+    <h2>Three steps, about two minutes</h2>
+
+    <div class="steps">
+
+      <div class="step">
+        <h3>Create an app-specific password</h3>
+        <p class="muted">
+          Your normal password will not work: providers stopped accepting it for mail programs
+          years ago. What you need instead is a separate password that exists only for this, and
+          can be revoked without changing anything else.
+        </p>
+        <div class="tblwrap">
+          <table>
+            <thead><tr><th>Provider</th><th>Where to click</th></tr></thead>
+            <tbody>
+              <tr><td>Gmail / Workspace</td><td>Turn on 2-Step Verification first, then <b>myaccount.google.com/apppasswords</b>. Workspace accounts also need IMAP enabled by an administrator</td></tr>
+              <tr><td>iCloud</td><td><b>appleid.apple.com → Sign-In and Security → App-Specific Passwords</b>. Your login is often just the part before <code>@</code></td></tr>
+              <tr><td>Fastmail</td><td><b>Settings → Privacy &amp; Security → App passwords</b></td></tr>
+              <tr><td>Yahoo / AOL</td><td><b>Account security → Generate app password</b></td></tr>
+              <tr><td>Yandex / Mail.ru</td><td>Security settings → app passwords, and switch IMAP on under mail-client settings</td></tr>
+              <tr><td>Zoho</td><td><b>Security → App passwords</b>, plus IMAP access in Mail Settings</td></tr>
+              <tr><td>Outlook.com / Microsoft 365</td><td>Usually OAuth only — see the note below</td></tr>
+              <tr><td>Proton</td><td>Install <b>Proton Bridge</b> and use the login and password it shows you</td></tr>
+              <tr><td>Your company server</td><td>Often your normal password. Ask whoever runs it for the IMAP and SMTP host names</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note warn">
+          <b>Microsoft is the awkward one.</b> Personal accounts and most tenants now accept only
+          OAuth, so no password will work. Supply an access token as the password together with
+          <code>MAIL_AUTH_TYPE=oauth2</code>, or use a mailbox elsewhere. The same option works
+          for Gmail if you prefer a token to an app password.
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>Install and connect</h3>
+        <p class="muted">
+          Once, in a terminal — the server is a small Node program that your assistant will start
+          on its own from then on:
+        </p>
+        <div class="codewrap"><button class="copy">copy</button><pre>git clone git@github.com:amalychev/mail-mcp.git
+cd mail-mcp
+npm install &amp;&amp; npm run build</pre></div>
+        <p class="muted">Then point your assistant at it. Pick the tool you use:</p>
+
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" aria-selected="true" data-panel="p-cc">Claude Code</button>
+          <button class="tab" role="tab" aria-selected="false" data-panel="p-mcp">.mcp.json (any project)</button>
+          <button class="tab" role="tab" aria-selected="false" data-panel="p-desk">Claude Desktop</button>
+          <button class="tab" role="tab" aria-selected="false" data-panel="p-cursor">Cursor</button>
+        </div>
+
+        <div class="panel" id="p-cc">
+          <p class="muted">One command:</p>
+          <div class="codewrap"><button class="copy">copy</button><pre>claude mcp add mail \
+  --env MAIL_USER=you@fastmail.com \
+  --env MAIL_PASSWORD=your-app-password \
+  -- node /absolute/path/mail-mcp/dist/index.js</pre></div>
+          <p class="muted">
+            For a recognised provider that is the whole setup — the incoming and outgoing servers
+            are derived from your address. For any other mailbox, add
+            <code>--env IMAP_HOST=…</code> and <code>--env SMTP_HOST=…</code>.
+          </p>
+        </div>
+
+        <div class="panel" id="p-mcp" hidden>
+          <p class="muted">
+            Prefer to write the configuration by hand? Create <code>.mcp.json</code> in the root of
+            the repository you work in — everyone who opens it gets the same setup:
+          </p>
+          <div class="codewrap"><button class="copy">copy</button><pre>{
+  <span class="c-key">"mcpServers"</span>: {
+    <span class="c-key">"mail"</span>: {
+      <span class="c-key">"command"</span>: <span class="c-str">"node"</span>,
+      <span class="c-key">"args"</span>: [<span class="c-str">"/absolute/path/mail-mcp/dist/index.js"</span>],
+      <span class="c-key">"env"</span>: {
+        <span class="c-key">"MAIL_USER"</span>: <span class="c-str">"you@example.com"</span>,
+        <span class="c-key">"MAIL_PASSWORD"</span>: <span class="c-str">"${MAIL_PASSWORD}"</span>,
+        <span class="c-key">"IMAP_HOST"</span>: <span class="c-str">"imap.example.com"</span>,
+        <span class="c-key">"SMTP_HOST"</span>: <span class="c-str">"smtp.example.com"</span>
+      }
+    }
+  }
+}</pre></div>
+          <ul class="plain">
+            <li><b><code>MAIL_USER</code></b> — the address you sign in with. For iCloud and some company servers this is only the part before <code>@</code>; then add <code>MAIL_FROM</code> with the full address.</li>
+            <li><b><code>MAIL_PASSWORD</code></b> — the app-specific password from step 1.</li>
+            <li><b><code>IMAP_HOST</code> / <code>SMTP_HOST</code></b> — optional for a known provider, required for anything else. Your provider calls them the <i>incoming</i> and <i>outgoing</i> mail server.</li>
+          </ul>
+          <div class="note calm">
+            <b>Do not commit a real password.</b> Writing <code>"${MAIL_PASSWORD}"</code> as above
+            keeps the file shareable: Claude Code and Cursor substitute environment variables, so
+            the secret stays in your shell.
+          </div>
+        </div>
+
+        <div class="panel" id="p-desk" hidden>
+          <p class="muted">
+            Open <b>Settings → Developer → Edit config</b>, which opens
+            <code>claude_desktop_config.json</code>, and add:
+          </p>
+          <div class="codewrap"><button class="copy">copy</button><pre>{
+  <span class="c-key">"mcpServers"</span>: {
+    <span class="c-key">"mail"</span>: {
+      <span class="c-key">"command"</span>: <span class="c-str">"node"</span>,
+      <span class="c-key">"args"</span>: [<span class="c-str">"/absolute/path/mail-mcp/dist/index.js"</span>],
+      <span class="c-key">"env"</span>: {
+        <span class="c-key">"MAIL_USER"</span>: <span class="c-str">"you@fastmail.com"</span>,
+        <span class="c-key">"MAIL_PASSWORD"</span>: <span class="c-str">"your-app-password"</span>
+      }
+    }
+  }
+}</pre></div>
+          <p class="muted">Save the file and restart the app completely (quit, not just close the window).</p>
+        </div>
+
+        <div class="panel" id="p-cursor" hidden>
+          <p class="muted">Create <code>.cursor/mcp.json</code> in your project with the same shape:</p>
+          <div class="codewrap"><button class="copy">copy</button><pre>{
+  <span class="c-key">"mcpServers"</span>: {
+    <span class="c-key">"mail"</span>: {
+      <span class="c-key">"command"</span>: <span class="c-str">"node"</span>,
+      <span class="c-key">"args"</span>: [<span class="c-str">"/absolute/path/mail-mcp/dist/index.js"</span>],
+      <span class="c-key">"env"</span>: {
+        <span class="c-key">"MAIL_USER"</span>: <span class="c-str">"you@fastmail.com"</span>,
+        <span class="c-key">"MAIL_PASSWORD"</span>: <span class="c-str">"your-app-password"</span>
+      }
+    }
+  }
+}</pre></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>Add guard rails (optional, but read this one)</h3>
+        <p class="muted">
+          A mailbox password opens the whole mailbox. These three settings narrow what the
+          assistant may do with it, and they are enforced by the server rather than by asking
+          nicely in a prompt.
+        </p>
+        <div class="tblwrap">
+          <table>
+            <thead><tr><th>Setting</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">MAIL_ALLOWED_RECIPIENTS</td><td>—</td><td>Mail may only go to these addresses or <code>@domains</code>. To, Cc and Bcc are all checked, before anything reaches the outgoing server</td></tr>
+              <tr><td class="mono">MAIL_READ_ONLY</td><td class="mono">false</td><td><code>true</code> — the assistant can read everything and change nothing</td></tr>
+              <tr><td class="mono">MAIL_ALLOWED_FOLDERS</td><td>—</td><td>Only these folders and their subfolders are reachable, for reading as well as writing</td></tr>
+              <tr><td class="mono">MAIL_DEFAULT_FOLDER</td><td class="mono">INBOX</td><td>Folder used when a request does not name one</td></tr>
+              <tr><td class="mono">MAIL_FROM</td><td class="mono">MAIL_USER</td><td>Address in the From header, when the login is not one</td></tr>
+              <tr><td class="mono">MAIL_APPEND_TO_SENT</td><td class="mono">true</td><td><code>false</code> — do not keep a copy of what was sent</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">
+          The full list, including timeouts and size caps, is in <code>.env.example</code> and the
+          README.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ VERIFY -->
+<section id="verify">
+  <div class="wrap">
+    <p class="kicker">Verify</p>
+    <h2>Check that it works</h2>
+    <p class="lead">Ask your assistant this, exactly:</p>
+    <div class="prompts">
+      <div class="prompt"><q>Run mail_whoami</q><span class="uses">mail_whoami</span></div>
+    </div>
+    <p class="muted" style="margin-top:18px">
+      A working setup logs in to <b>both</b> servers and answers with your address, the two host
+      names, how many folders you have, how much of the inbox is unread, and your quota. It
+      checks incoming and outgoing separately on purpose: a mailbox that reads perfectly can
+      still be unable to send, and this tells you which half is broken.
+    </p>
+    <p class="muted">
+      If it reports that the credentials were rejected, the message names your provider and what
+      it wants — nearly always an app-specific password where an account password was given. If
+      the assistant says it has no such tool, the connection was not registered: check the path
+      to <code>dist/index.js</code>, and restart the app.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ USE -->
+<section id="use">
+  <div class="wrap">
+    <p class="kicker">Everyday use</p>
+    <h2>Things to ask for</h2>
+    <p class="lead">
+      You never type tool names. Ask in normal language; the assistant picks the tool. These are
+      real examples with the tool it will reach for.
+    </p>
+
+    <div class="prompts">
+      <div class="prompt"><q>What came in overnight? Anything I need to answer today?</q><span class="uses">mail_list_messages</span></div>
+      <div class="prompt"><q>Find the email from Anna about the Q3 invoice</q><span class="uses">mail_search</span></div>
+      <div class="prompt"><q>Show me the screenshot she attached</q><span class="uses">mail_read_attachment</span></div>
+      <div class="prompt"><q>Catch me up on the whole contract thread, oldest first</q><span class="uses">mail_read_thread</span></div>
+      <div class="prompt"><q>Draft a reply saying Friday works, but don't send it yet</q><span class="uses">mail_save_draft</span></div>
+      <div class="prompt"><q>Reply to all on that message and confirm the date</q><span class="uses">mail_reply</span></div>
+      <div class="prompt"><q>Forward the invoice to accounting with a short note</q><span class="uses">mail_forward</span></div>
+      <div class="prompt"><q>Send the report to the team and attach ~/reports/q3.pdf</q><span class="uses">mail_send</span></div>
+      <div class="prompt"><q>Mark every newsletter from last month as read</q><span class="uses">mail_mark_search_read</span></div>
+      <div class="prompt"><q>File everything from this client into the Clients folder</q><span class="uses">mail_move_messages</span></div>
+      <div class="prompt"><q>Which unread emails have attachments?</q><span class="uses">mail_search</span></div>
+      <div class="prompt"><q>Did this message really come from our bank? Check the headers</q><span class="uses">mail_get_raw_message</span></div>
+    </div>
+
+    <h3>Three things worth knowing</h3>
+    <ul class="plain">
+      <li><b>Reading does not mark as read.</b> The assistant can go through your inbox and leave it exactly as it found it. Marking happens only when you ask for it.</li>
+      <li><b>Folder names are forgiving.</b> Say "sent", "trash" or "archive" and the right folder is found, whatever your provider calls it — <code>[Gmail]/Sent Mail</code>, <code>Отправленные</code> or anything else.</li>
+      <li><b>Dates are forgiving too.</b> "Since yesterday", "the last 7 days" and <code>2026-08-01</code> all work.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ ATTACHMENTS -->
+<section id="attachments">
+  <div class="wrap">
+    <p class="kicker">The interesting part</p>
+    <h2>Attachments — actually opened, not just listed</h2>
+    <p class="lead">
+      An attachment lives inside the message as an encoded block, reachable only over an
+      authenticated connection. An assistant without this server sees, at best, a filename. This
+      one downloads the part and hands it over in the form that is actually useful.
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="n">Images</div>
+        <h4>Looked at</h4>
+        <p>PNG, JPEG, GIF and WebP come back as images. "What does this screenshot show?" is a
+        question your assistant can now answer.</p>
+      </div>
+      <div class="card">
+        <div class="n">Text</div>
+        <h4>Read</h4>
+        <p>Logs, CSV, JSON, XML — handed over as text, decoded from whatever charset the sender
+        used, including the legacy ones.</p>
+      </div>
+      <div class="card">
+        <div class="n">Everything else</div>
+        <h4>Passed through</h4>
+        <p>PDFs, spreadsheets and archives arrive intact as files the assistant can work with
+        rather than links it cannot follow.</p>
+      </div>
+    </div>
+
+    <h3>What it looks like</h3>
+    <p class="muted">
+      <code>mail_read_message</code> returns the body together with an attachment list — name,
+      type, size, and the handle used to fetch each one:
+    </p>
+    <div class="codewrap"><button class="copy">copy</button><pre><span class="c-cm">// mail_read_message → excerpt of the response</span>
+{
+  <span class="c-key">"subject"</span>: <span class="c-str">"Q3 invoice and the screenshot"</span>,
+  <span class="c-key">"from"</span>: <span class="c-str">"Anna Petrova &lt;anna@partner.example&gt;"</span>,
+  <span class="c-key">"body"</span>: <span class="c-str">"Hi,\n\nInvoice attached, plus the screenshot…"</span>,
+  <span class="c-key">"attachments"</span>: [
+    { <span class="c-key">"part"</span>: <span class="c-str">"2"</span>, <span class="c-key">"filename"</span>: <span class="c-str">"invoice.pdf"</span>, <span class="c-key">"content_type"</span>: <span class="c-str">"application/pdf"</span>, <span class="c-key">"size"</span>: <span class="c-num">48213</span>, <span class="c-key">"inline"</span>: false },
+    { <span class="c-key">"part"</span>: <span class="c-str">"3"</span>, <span class="c-key">"filename"</span>: <span class="c-str">"error.png"</span>,   <span class="c-key">"content_type"</span>: <span class="c-str">"image/png"</span>,       <span class="c-key">"size"</span>: <span class="c-num">92104</span>, <span class="c-key">"inline"</span>: false }
+  ]
+}</pre></div>
+    <p class="muted">
+      In practice you say "show me the screenshot" and both steps happen by themselves. The
+      signature logos embedded in a message are marked <code>inline</code>, so they are never
+      mistaken for the document you meant.
+    </p>
+
+    <div class="note">
+      <b>Only what is needed is downloaded.</b> Reading a message fetches its body part alone —
+      a message carrying a 20 MB attachment still costs a few kilobytes to read, and the
+      attachment travels only when you ask for it. Anything above 8 MB is refused by default
+      rather than pulled into the conversation.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SAFETY -->
+<section id="safety">
+  <div class="wrap">
+    <p class="kicker">Safety</p>
+    <h2>Keeping it inside bounds</h2>
+    <p class="lead">
+      Email is not a read-only API with a scoped token. A mailbox password opens everything in
+      the mailbox and can send as you. That deserves an honest answer rather than reassurance,
+      so here is exactly what limits it.
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <h4>A recipient allowlist</h4>
+        <p>
+          <code>MAIL_ALLOWED_RECIPIENTS=@yourcompany.com</code> — mail can only be addressed to
+          those. To, Cc and Bcc are checked together, before the message reaches the outgoing
+          server. The one setting worth having even when everything else is open.
+        </p>
+      </div>
+      <div class="card">
+        <h4>Read-only</h4>
+        <p>
+          <code>MAIL_READ_ONLY=true</code> refuses every tool that would send, move, flag or
+          delete. Searching and reading keep working completely.
+        </p>
+      </div>
+      <div class="card">
+        <h4>A folder allowlist</h4>
+        <p>
+          <code>MAIL_ALLOWED_FOLDERS=INBOX</code> puts everything else out of reach, for reading
+          as well as writing. Subfolders of a listed folder come along.
+        </p>
+      </div>
+    </div>
+
+    <h3>What is careful by default</h3>
+    <div class="tblwrap">
+      <table>
+        <tbody>
+          <tr><td>Reading a message</td><td>Leaves it unread. Marking as read is a separate, explicit request</td></tr>
+          <tr><td>Deleting</td><td>Moves to Trash. Erasing for good needs <code>permanent</code> <b>and</b> <code>confirm</code> together</td></tr>
+          <tr><td>Deleting a folder</td><td>Needs an explicit confirmation, because it takes every message in it along</td></tr>
+          <tr><td>The From address</td><td>Fixed by your configuration. No tool argument can change who the mail appears to be from</td></tr>
+          <tr><td>Bulk marking</td><td>Capped at 500 messages per call, so an over-broad search cannot quietly sweep the whole mailbox</td></tr>
+          <tr><td>Sent mail</td><td>Filed in Sent as the exact bytes that were sent, so your own record matches what the recipient got</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Where your password lives</h3>
+    <ul class="plain">
+      <li><b>On your machine.</b> In the recommended setup the server runs locally and talks to exactly two parties: your assistant and your mail server. Nothing passes through anyone else.</li>
+      <li><b>Nothing is stored by this software.</b> No database, no cache of your messages, nothing written to disk. Connections are held open briefly so repeated requests do not re-authenticate, and that is all.</li>
+      <li><b>Revoking is instant.</b> Delete the app-specific password in your provider's settings and the access is gone, with no effect on your account.</li>
+      <li><b>Least privilege still applies.</b> An app password that only permits IMAP and SMTP cannot be used to log in to the web interface or change your account.</li>
+      <li><b>What the assistant reads becomes part of your conversation with it</b>, exactly as if you had pasted it in yourself. That is worth remembering before pointing it at a mailbox full of things you would not paste.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ TOOLS -->
+<section id="tools">
+  <div class="wrap">
+    <p class="kicker">Reference</p>
+    <h2>All 20 tools</h2>
+    <p class="lead">
+      You do not need to memorise these — the assistant chooses on its own. Search when you want
+      to know whether something is possible.
+    </p>
+
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="Search tools…  e.g. reply, attachment, folder" aria-label="Search tools">
+      <button class="chip" aria-pressed="true" data-cat="all">All</button>
+      <button class="chip" aria-pressed="false" data-cat="read">Reading</button>
+      <button class="chip" aria-pressed="false" data-cat="files">Attachments</button>
+      <button class="chip" aria-pressed="false" data-cat="write">Writing</button>
+      <button class="chip" aria-pressed="false" data-cat="organise">Organising</button>
+      <button class="chip" aria-pressed="false" data-cat="folders">Folders</button>
+    </div>
+    <div id="count"></div>
+
+    <div class="tblwrap">
+      <table id="tooltable">
+        <thead><tr><th>Tool</th><th>Access</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr data-cat="read"><td class="mono">mail_whoami</td><td><span class="rw r">read</span></td><td>Logs in to both servers and reports the account, folders, unread count, quota and any restrictions — the configuration smoke test</td></tr>
+          <tr data-cat="read"><td class="mono">mail_list_messages</td><td><span class="rw r">read</span></td><td>Newest messages in a folder, with sender, subject, date, flags and an optional preview of each</td></tr>
+          <tr data-cat="read"><td class="mono">mail_search</td><td><span class="rw r">read</span></td><td>Search by sender, recipient, subject, body text, date range, read state, size, attachments or any header</td></tr>
+          <tr data-cat="read"><td class="mono">mail_read_message</td><td><span class="rw r">read</span></td><td>One message in full: headers, readable body, attachment list. HTML is flattened to prose with the links kept</td></tr>
+          <tr data-cat="read"><td class="mono">mail_read_thread</td><td><span class="rw r">read</span></td><td>The whole conversation, oldest first, including your own replies from the Sent folder</td></tr>
+          <tr data-cat="read"><td class="mono">mail_get_raw_message</td><td><span class="rw r">read</span></td><td>The raw source — Received chains, SPF and DKIM results, mailing-list headers</td></tr>
+
+          <tr data-cat="files"><td class="mono">mail_list_attachments</td><td><span class="rw r">read</span></td><td>What is attached to a message, without fetching the body. Inline images are marked as such</td></tr>
+          <tr data-cat="files"><td class="mono">mail_read_attachment</td><td><span class="rw r">read</span></td><td>Downloads one attachment: images as images, text as text, everything else as a file</td></tr>
+
+          <tr data-cat="write"><td class="mono">mail_send</td><td><span class="rw w">write</span></td><td>Sends a new message, with attachments from disk or supplied inline</td></tr>
+          <tr data-cat="write"><td class="mono">mail_reply</td><td><span class="rw w">write</span></td><td>Replies inside the conversation, carrying the threading headers so it lands in the right place. Reply-all optional</td></tr>
+          <tr data-cat="write"><td class="mono">mail_forward</td><td><span class="rw w">write</span></td><td>Forwards with the usual header block and, unless disabled, the original attachments</td></tr>
+          <tr data-cat="write"><td class="mono">mail_save_draft</td><td><span class="rw w">write</span></td><td>Writes into Drafts without sending — for text a person should look at first</td></tr>
+
+          <tr data-cat="organise"><td class="mono">mail_set_flags</td><td><span class="rw w">write</span></td><td>Read/unread, flagged, answered and custom keywords, on several messages at once</td></tr>
+          <tr data-cat="organise"><td class="mono">mail_mark_search_read</td><td><span class="rw w">write</span></td><td>Marks everything a search matches, with a ceiling so a broad query cannot run away</td></tr>
+          <tr data-cat="organise"><td class="mono">mail_move_messages</td><td><span class="rw w">write</span></td><td>Moves messages into another folder — filing, archiving, clearing the inbox</td></tr>
+          <tr data-cat="organise"><td class="mono">mail_copy_messages</td><td><span class="rw w">write</span></td><td>Copies messages into another folder, leaving the originals in place</td></tr>
+          <tr data-cat="organise"><td class="mono">mail_delete_messages</td><td><span class="rw w">danger</span></td><td>Moves to Trash; erasing for good needs an explicit confirmation</td></tr>
+
+          <tr data-cat="folders"><td class="mono">mail_list_folders</td><td><span class="rw r">read</span></td><td>The folder tree, with each folder's role and, on request, message and unread counts</td></tr>
+          <tr data-cat="folders"><td class="mono">mail_folder_status</td><td><span class="rw r">read</span></td><td>Message count, unread count and next UID for one folder — the cheap "anything new?" check</td></tr>
+          <tr data-cat="folders"><td class="mono">mail_folder_action</td><td><span class="rw w">danger</span></td><td>Create, rename, delete, subscribe or unsubscribe a folder</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FAQ -->
+<section id="faq">
+  <div class="wrap">
+    <p class="kicker">FAQ</p>
+    <h2>Questions people actually ask</h2>
+
+    <details>
+      <summary>Which mail providers does this work with?</summary>
+      <p>Any server that speaks IMAP, which is nearly all of them. Gmail, Outlook, Yahoo, iCloud,
+      Fastmail, Zoho, Yandex, Mail.ru, GMX, AOL, Migadu and mailbox.org have presets, so your
+      address alone is enough. For anything else — a company server, a small host, your own —
+      you give the incoming and outgoing host names once.</p>
+    </details>
+
+    <details>
+      <summary>Why does my password not work?</summary>
+      <p>Because almost every provider refuses the account password over IMAP. You need an
+      app-specific password: a separate value generated in the provider's security settings, used
+      only here, revocable on its own. Gmail requires 2-Step Verification before the option even
+      appears, and several providers additionally need IMAP switched on in the web interface. The
+      error message from <code>mail_whoami</code> names your provider's particular requirement.</p>
+    </details>
+
+    <details>
+      <summary>Can the assistant email anyone it likes?</summary>
+      <p>Not if you set a recipient allowlist. <code>MAIL_ALLOWED_RECIPIENTS</code> restricts
+      outgoing mail to named addresses or whole domains, checked across To, Cc and Bcc before
+      anything reaches the outgoing server. There is also a full read-only mode in which nothing
+      can be sent or changed at all.</p>
+    </details>
+
+    <details>
+      <summary>Will it mark things as read, or move things around by accident?</summary>
+      <p>Reading leaves a message unread unless you explicitly ask to mark it. Deleting means
+      moving to Trash; erasing for good needs <code>permanent</code> and <code>confirm</code>
+      together, and deleting a folder needs a confirmation of its own.</p>
+    </details>
+
+    <details>
+      <summary>Does my password leave my machine?</summary>
+      <p>Not in the setup documented above. The server runs locally and talks to exactly two
+      parties: your assistant and your mail server. A hosted endpoint also exists for convenience,
+      and there the password does pass through the host — which is precisely why the local mode is
+      the one described first.</p>
+    </details>
+
+    <details>
+      <summary>Can it read a screenshot someone emailed me?</summary>
+      <p>Yes, and that is the difference between this and a text dump of your inbox. PNG, JPEG,
+      GIF and WebP are handed over as images the model can look at; text files arrive as text,
+      decoded from whatever charset the sender used; anything else arrives as a file it can still
+      work with.</p>
+    </details>
+
+    <details>
+      <summary>Will replies thread properly?</summary>
+      <p>Yes. A reply carries the <code>In-Reply-To</code> and <code>References</code> headers from
+      the original, so it appears inside the conversation in the recipient's mail client rather
+      than starting a new one. The original is marked as answered, as any mail client would, and
+      your copy is filed in Sent.</p>
+    </details>
+
+    <details>
+      <summary>Can I connect two mailboxes at once?</summary>
+      <p>Yes. Add two entries with different names — for example <code>mail-work</code> and
+      <code>mail-personal</code>. The assistant sees both sets of tools and picks by name.</p>
+    </details>
+
+    <details>
+      <summary>My company mail server is only reachable inside the network.</summary>
+      <p>Then run the server locally, which is the recommended mode anyway: it connects from your
+      machine, so anything your machine can reach works — a server on a private network, or a
+      Proton Bridge listening on localhost.</p>
+    </details>
+
+    <details>
+      <summary>What happens with a very large mailbox?</summary>
+      <p>Nothing is downloaded wholesale. Searching runs on the server's own index, listings return
+      short summaries, and reading a message fetches only its body part. Logging in is the
+      expensive step, so authenticated connections are kept warm for a few minutes and reused
+      instead of re-established for every request.</p>
+    </details>
+  </div>
+</section>
+
+<!-- ============================================================ TROUBLE -->
+<section id="trouble">
+  <div class="wrap">
+    <p class="kicker">Troubleshooting</p>
+    <h2>When something does not work</h2>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>What you see</th><th>What it means and what to do</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">IMAP rejected the credentials</td><td>Nearly always an account password where an app-specific one is required, or IMAP not yet enabled in the provider's web interface. The message names your provider's requirement</td></tr>
+          <tr><td class="mono">Cannot reach the SMTP server</td><td>Outgoing mail is port 587 with STARTTLS or 465 with TLS. Port 25 is blocked by most networks and providers</td></tr>
+          <tr><td>Mail reads fine but sending fails</td><td>Incoming and outgoing are separate services. <code>mail_whoami</code> checks them separately and tells you which one is refusing</td></tr>
+          <tr><td>The connection hangs, then times out</td><td>A TLS port configured as STARTTLS, or the reverse. For a non-standard port set <code>IMAP_SECURE</code> / <code>SMTP_SECURE</code> explicitly</td></tr>
+          <tr><td class="mono">The server refused the message (550)</td><td>The account is not allowed to send as the configured From address. Set <code>MAIL_FROM</code> to an address it may use</td></tr>
+          <tr><td class="mono">No folder X in this account</td><td>The error lists the real names. Providers localise them, and Gmail nests everything under <code>[Gmail]</code> — or just say "sent", "trash", "archive" and let it resolve</td></tr>
+          <tr><td class="mono">No message with UID N</td><td>UIDs belong to one folder. A message that has been moved has a different UID in its new home</td></tr>
+          <tr><td>The assistant has no mail tools</td><td>The connection was not registered. Check the path to <code>dist/index.js</code>, make sure <code>npm run build</code> ran, and restart the app completely</td></tr>
+          <tr><td>Edits to the config change nothing</td><td>In Claude Code a server added to the local scope (in <code>~/.claude.json</code>) wins over the project's <code>.mcp.json</code>. <code>claude mcp list</code> shows which is in use; <code>claude mcp remove mail -s local</code> drops the stale one</td></tr>
+          <tr><td class="mono">certificate</td><td>An internal server with its own certificate authority. Set <code>MAIL_TLS_REJECT_UNAUTHORIZED=false</code>, knowing it applies to the whole process</td></tr>
+          <tr><td class="mono">Refused: … MAIL_READ_ONLY / MAIL_ALLOWED_…</td><td>Working as intended: a guard rail you configured stopped the request</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ HOSTED -->
+<section id="hosted">
+  <div class="wrap">
+    <p class="kicker">Hosted mode</p>
+    <h2>Running it as a service</h2>
+    <p class="lead">
+      The same server also speaks HTTP, serving this page on <code>/</code> and an MCP endpoint on
+      <code>/mcp</code> where every request carries its own mailbox credentials. One deployment
+      then serves many mailboxes without holding any state.
+    </p>
+
+    <div class="codewrap"><button class="copy">copy</button><pre>claude mcp add --transport http mail \
+  https://mail-mcp.webapace.ink/mcp \
+  --header "X-Mail-User: you@fastmail.com" \
+  --header "X-Mail-Password: your-app-password"</pre></div>
+
+    <p class="muted">
+      Every environment variable has a header equivalent — <code>X-Mail-Imap-Host</code>,
+      <code>X-Mail-Smtp-Host</code>, <code>X-Mail-Read-Only</code>,
+      <code>X-Mail-Allowed-Recipients</code> and the rest;
+      <code>Authorization: Basic</code> works instead of the two credential headers. The full
+      list is in the README.
+    </p>
+
+    <div class="note warn">
+      <b>Understand the trade before using it.</b> Your mailbox password passes through the host
+      on every request. The service keeps nothing — no accounts, no database, nothing on disk,
+      one throwaway server instance per request — but a mailbox password is not a scoped token,
+      and no storage policy changes that. For mail, the local setup at the top of this page is
+      the better default, and it is not harder.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h4>Your own container</h4>
+        <p>
+          <code>docker build -t mail-mcp .</code> and it serves the same page and endpoint at your
+          own address. Credentials stay inside your network, and
+          <code>MAIL_ALLOWED_HOSTS</code> can pin it to your own mail servers.
+        </p>
+      </div>
+      <div class="card">
+        <h4>Private networks are refused</h4>
+        <p>
+          Without an explicit allowlist a hosted deployment will not connect to
+          <code>localhost</code> or private address ranges, so it cannot be used to probe the
+          network it runs in. Reaching an internal mail server is a job for a local install.
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>Where to look next.</b> The repository's <code>README.md</code> covers both modes in
+      full: every environment variable, the provider presets, the Docker build, the deployment
+      script, and how to add tools of your own.
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    Mail MCP · works with any IMAP mailbox ·
+    source and full documentation on
+    <a href="https://github.com/amalychev/mail-mcp" rel="noopener">GitHub</a>
+  </div>
+</footer>
+
+<script>
+  // Copy buttons on every code block.
+  for (const button of document.querySelectorAll(".copy")) {
+    button.addEventListener("click", async () => {
+      const code = button.parentElement.querySelector("pre").innerText;
+      try {
+        await navigator.clipboard.writeText(code);
+        button.textContent = "copied";
+        setTimeout(() => (button.textContent = "copy"), 1400);
+      } catch {
+        button.textContent = "press ⌘C";
+      }
+    });
+  }
+
+  // Client tabs in the setup section.
+  const tabs = [...document.querySelectorAll(".tab")];
+  for (const tab of tabs) {
+    tab.addEventListener("click", () => {
+      for (const other of tabs) {
+        const panel = document.getElementById(other.dataset.panel);
+        const selected = other === tab;
+        other.setAttribute("aria-selected", String(selected));
+        panel.hidden = !selected;
+      }
+    });
+  }
+
+  // Tool explorer: text search combined with a category filter.
+  const rows = [...document.querySelectorAll("#tooltable tbody tr")];
+  const searchInput = document.getElementById("search");
+  const chips = [...document.querySelectorAll(".chip")];
+  const counter = document.getElementById("count");
+  let category = "all";
+
+  function applyFilter() {
+    const term = searchInput.value.trim().toLowerCase();
+    let visible = 0;
+    for (const row of rows) {
+      const matchesCategory = category === "all" || row.dataset.cat === category;
+      const matchesTerm = !term || row.innerText.toLowerCase().includes(term);
+      const show = matchesCategory && matchesTerm;
+      row.hidden = !show;
+      if (show) visible++;
+    }
+    counter.textContent = visible === rows.length
+      ? rows.length + " tools"
+      : visible + " of " + rows.length + " tools";
+  }
+
+  searchInput.addEventListener("input", applyFilter);
+  for (const chip of chips) {
+    chip.addEventListener("click", () => {
+      category = chip.dataset.cat;
+      for (const other of chips) other.setAttribute("aria-pressed", String(other === chip));
+      applyFilter();
+    });
+  }
+  applyFilter();
+</script>
+
+</body>
+</html>
