@@ -397,6 +397,7 @@ npm run assets      # headless Chrome does the rasterising; set CHROME=… if it
 npm run build       # compile
 npm run dev         # tsc --watch
 npm run typecheck   # types only
+npm test            # compile, then run test/ with node --test; no mailbox needed
 npm run start       # stdio mode
 npm run start:http  # hosted mode on PORT (default 8080)
 ```

@@ -21,6 +21,7 @@
     "start": "node dist/index.js",
     "start:http": "MCP_TRANSPORT=http node dist/index.js",
     "typecheck": "tsc --noEmit",
+    "test": "tsc && node --test test/",
     "assets": "node scripts/build-assets.mjs",
     "prepare": "npm run build"
   },
