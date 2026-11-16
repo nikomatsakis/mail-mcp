@@ -182,6 +182,7 @@ In stdio mode everything is configured through environment variables.
 | `MAIL_READ_ONLY` | no | `false` | `true` — every tool that would change anything is refused |
 | `MAIL_ALLOWED_RECIPIENTS` | no | — | Comma-separated addresses or `@domains`; mail elsewhere is refused |
 | `MAIL_ALLOWED_FOLDERS` | no | — | Comma-separated folders; everything else is out of scope |
+| `MAIL_ALLOWED_TOOLS` | no | — | Comma-separated tool names or `@groups`; only these tools exist |
 | `MAIL_APPEND_TO_SENT` | no | `true` | `false` — do not file a copy of sent mail |
 | `MAIL_TLS_REJECT_UNAUTHORIZED` | no | `true` | `false` — accept a self-signed certificate |
 | `MAIL_TIMEOUT_MS` | no | `60000` | Per-connection timeout |
@@ -264,7 +265,7 @@ overridden by a tool argument.
 ## Keeping it inside bounds
 
 An assistant with a mailbox password can, in principle, read everything and write to anyone.
-Three independent limits narrow that, and they stack:
+Four independent limits narrow that, and they stack:
 
 **Read-only.** `MAIL_READ_ONLY=true` refuses every tool that sends, moves, flags or deletes.
 Reading still works completely.
@@ -277,6 +278,27 @@ anyone" into "the assistant could email these people".
 **A folder allowlist.** `MAIL_ALLOWED_FOLDERS=INBOX,INBOX/Clients` puts every other folder out
 of reach, for reading as well as writing. A listed folder covers its subfolders. The
 "no such folder" error is filtered to the allowed set, so it cannot be used to map the account.
+
+**A tool allowlist.** `MAIL_ALLOWED_TOOLS=@triage` registers only the listed tools; the rest do
+not exist on the server, so the assistant never sees them. Entries are tool names or groups, and
+mix freely — `@read,mail_set_flags`:
+
+| Group | Tools |
+|---|---|
+| `@read` | `mail_whoami`, `mail_list_folders`, `mail_folder_status`, `mail_list_messages`, `mail_search`, `mail_read_message`, `mail_read_thread`, `mail_get_raw_message`, `mail_list_attachments`, `mail_read_attachment` |
+| `@flag` | `mail_set_flags`, `mail_mark_search_read` |
+| `@organize` | `mail_move_messages`, `mail_copy_messages`, `mail_delete_messages`, `mail_folder_action` |
+| `@compose` | `mail_send`, `mail_reply`, `mail_forward`, `mail_save_draft` |
+| `@triage` | `@read` and `@flag`: read everything, mark read or unread, flag — never send |
+
+This is finer-grained than read-only: `@triage` with `MAIL_READ_ONLY=false` allows flagging but
+not replying. Read-only still applies on top, so combining it with `@flag` leaves the flag tools
+listed but refused. `mail_read_message` is in `@read` yet can set the read flag via `mark_read`
+unless the server is read-only.
+
+An unknown tool or group name stops the server at startup. Set but empty, the variable
+registers no tools at all, so a template variable that expands to nothing cannot widen access.
+A tool not listed in any group is exposed only when named explicitly.
 
 Beyond that: deleting is a move to Trash unless `permanent: true` and `confirm: true` are both
 given, deleting a folder needs `confirm: true`, and an app-specific password can be revoked in
@@ -310,7 +332,7 @@ holding state:
 | `X-Mail-Read-Only`, `X-Mail-Allowed-Recipients`, `X-Mail-Allowed-Folders` | the guard rails above |
 | `X-Mail-Auth-Type` | `oauth2` to send a token instead of a password |
 
-TLS verification, timeouts and the size caps are deliberately **not** header-controlled: they
+TLS verification, timeouts, the size caps and `MAIL_ALLOWED_TOOLS` are deliberately **not** header-controlled: they
 are process-wide and belong to whoever runs the deployment. Attaching files from disk is forced
 off, because in hosted mode "the local disk" is the server's, not the caller's.
 

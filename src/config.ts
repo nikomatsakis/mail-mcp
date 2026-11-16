@@ -70,6 +70,12 @@ export interface Config {
    * the server's own disk rather than the caller's.
    */
   allowLocalFiles: boolean;
+  /**
+   * When set, only these tools are registered; every other tool is absent from
+   * the server, so the model never sees it. An empty list registers no tools.
+   * Undefined registers every tool. Not header-controlled in HTTP mode.
+   */
+  allowedTools?: string[];
 }
 
 /** The raw values a caller supplies, before validation and normalisation. */
@@ -100,6 +106,7 @@ export interface RawConfig {
   maxAttachmentBytes?: string;
   maxBodyChars?: string;
   allowLocalFiles?: string;
+  allowedTools?: string;
 }
 
 export class ConfigError extends Error {}
@@ -123,6 +130,53 @@ function toList(value: string | undefined): string[] {
     .split(/[,\s]+/)
     .map((entry) => entry.trim())
     .filter(Boolean);
+}
+
+const READ_TOOLS = [
+  "mail_whoami",
+  "mail_list_folders",
+  "mail_folder_status",
+  "mail_list_messages",
+  "mail_search",
+  "mail_read_message",
+  "mail_read_thread",
+  "mail_get_raw_message",
+  "mail_list_attachments",
+  "mail_read_attachment",
+];
+const FLAG_TOOLS = ["mail_set_flags", "mail_mark_search_read"];
+
+/**
+ * Named groups usable in MAIL_ALLOWED_TOOLS. A tool missing from every list here
+ * is not exposed by any group.
+ */
+export const TOOL_GROUPS: Record<string, string[]> = {
+  "@read": READ_TOOLS,
+  "@flag": FLAG_TOOLS,
+  "@organize": ["mail_move_messages", "mail_copy_messages", "mail_delete_messages", "mail_folder_action"],
+  "@compose": ["mail_send", "mail_reply", "mail_forward", "mail_save_draft"],
+  "@triage": [...READ_TOOLS, ...FLAG_TOOLS],
+};
+
+/**
+ * MAIL_ALLOWED_TOOLS with `@group` entries expanded and duplicates removed.
+ * Unset means no restriction; set but blank means no tools, so a template
+ * variable that expands to nothing cannot widen access.
+ */
+export function parseAllowedTools(value: string | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  const tools = toList(value).flatMap((entry) => {
+    if (!entry.startsWith("@")) return [entry];
+    const group = TOOL_GROUPS[entry.toLowerCase()];
+    if (!group) {
+      throw new ConfigError(
+        `MAIL_ALLOWED_TOOLS names unknown group ${entry}. Known groups: ` +
+          `${Object.keys(TOOL_GROUPS).join(", ")}.`,
+      );
+    }
+    return group;
+  });
+  return [...new Set(tools)];
 }
 
 /**
@@ -228,6 +282,7 @@ export function resolveConfig(raw: RawConfig): Config {
     maxAttachmentBytes: toNumber(raw.maxAttachmentBytes, 8 * 1024 * 1024),
     maxBodyChars: toNumber(raw.maxBodyChars, 40_000),
     allowLocalFiles: !isFalse(raw.allowLocalFiles),
+    allowedTools: parseAllowedTools(raw.allowedTools),
   };
 }
 
@@ -261,6 +316,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       maxAttachmentBytes: env.MAIL_MAX_ATTACHMENT_BYTES,
       maxBodyChars: env.MAIL_MAX_BODY_CHARS,
       allowLocalFiles: env.MAIL_ALLOW_LOCAL_FILES,
+      allowedTools: env.MAIL_ALLOWED_TOOLS,
     });
   } catch (error) {
     if (error instanceof ConfigError && /No mailbox user/.test(error.message)) {

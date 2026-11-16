@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { ConfigError, loadConfig } from "./config.js";
+import { ConfigError, loadConfig, parseAllowedTools } from "./config.js";
 import { httpOptionsFromEnv, startHttpServer } from "./http.js";
 import { closeAllConnections } from "./mail-client.js";
-import { buildServer } from "./server.js";
+import { assertKnownTools, buildServer } from "./server.js";
 
 // stdout is the MCP channel in stdio mode — everything human-readable goes to stderr.
 const log = (message: string) => process.stderr.write(`[mail-mcp] ${message}\n`);
@@ -38,6 +38,8 @@ async function runStdio(): Promise<void> {
 
 function runHttp(): void {
   const options = httpOptionsFromEnv();
+  // Per-request config is built later; a bad tool list must stop startup, not every request.
+  assertKnownTools(parseAllowedTools(options.defaults.allowedTools));
 
   startHttpServer(options, log);
   log(

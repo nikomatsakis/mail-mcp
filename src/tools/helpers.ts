@@ -7,6 +7,8 @@ export interface ToolContext {
   server: McpServer;
   client: MailClient;
   config: Config;
+  /** Every tool name passed to defineTool, whether or not it was registered. */
+  knownTools: Set<string>;
 }
 
 export type ContentBlock =
@@ -103,6 +105,10 @@ export function defineTool<S extends ZodRawShape>(
   options: DefineOptions,
   handler: (args: z.objectOutputType<S, z.ZodTypeAny>) => Promise<ToolResult>,
 ): void {
+  ctx.knownTools.add(name);
+  const { allowedTools } = ctx.config;
+  if (allowedTools && !allowedTools.includes(name)) return;
+
   ctx.server.registerTool(
     name,
     {

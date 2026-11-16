@@ -77,6 +77,7 @@ export function httpOptionsFromEnv(env: NodeJS.ProcessEnv = process.env): HttpOp
       timeoutMs: env.MAIL_TIMEOUT_MS,
       maxAttachmentBytes: env.MAIL_MAX_ATTACHMENT_BYTES,
       maxBodyChars: env.MAIL_MAX_BODY_CHARS,
+      allowedTools: env.MAIL_ALLOWED_TOOLS,
     },
   };
 }
@@ -140,6 +141,7 @@ export function configFromRequest(req: IncomingMessage, options: HttpOptions): C
     timeoutMs: defaults.timeoutMs,
     maxAttachmentBytes: defaults.maxAttachmentBytes,
     maxBodyChars: defaults.maxBodyChars,
+    allowedTools: defaults.allowedTools,
     // `path` attachments would read the server's disk, not the caller's.
     allowLocalFiles: "false",
   });
